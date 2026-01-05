@@ -26,7 +26,7 @@ async function loadOrders() {
                 <td>${order.id}</td>
                 <td>${order.user_name}</td>
                 <td>${order.product}</td>
-                <td>${parseFloat(order.price).toFixed(2)} zł</td>
+                <td>${parseFloat(order.price).toFixed(2)} zł (${order.price_eur} €)</td>
                 <td>${new Date(order.created_at).toLocaleString('pl-PL')}</td>
                 <td>
                     <button class="btn-small btn-edit" onclick="editOrder(${order.id})">Edytuj</button>

@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 RABBIT_URL = "amqp://guest:guest@rabbitmq/"
 
 async def consume_payment_done():
-    """Konsumuje potwierdzone płatności i symuluje dostawę"""
     retry_count = 0
     max_retries = 10
     
@@ -50,17 +49,17 @@ async def consume_payment_done():
                 print("Delivery Service: Max retries reached, giving up")
                 break
 
-# Background task storage
+
 background_tasks = set()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    
     print("Delivery Service: Starting up...")
     task = asyncio.create_task(consume_payment_done())
     background_tasks.add(task)
     yield
-    # Shutdown
+   
     print("Delivery Service: Shutting down...")
     task.cancel()
 
