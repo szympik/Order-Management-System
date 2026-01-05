@@ -1,0 +1,65 @@
+version: "3.9"
+
+services:
+  order:
+    build: ./order
+    container_name: order
+    ports:
+      - "8000:8000"
+    depends_on:
+      - rabbitmq
+      - db
+    environment:
+      - SERVICE_NAME=order
+      - RABBITMQ_HOST=rabbitmq
+      - DB_HOST=db
+      - DB_NAME=uber_eats
+      - DB_USER=uber
+      - DB_PASSWORD=uber
+
+  payment:
+    build: ./payment
+    container_name: payment
+    ports:
+      - "8001:8000"
+    depends_on:
+      - rabbitmq
+    environment:
+      - SERVICE_NAME=payment
+      - RABBITMQ_HOST=rabbitmq
+
+  delivery:
+    build: ./delivery
+    container_name: delivery
+    ports:
+      - "8002:8000"
+    depends_on:
+      - rabbitmq
+    environment:
+      - SERVICE_NAME=delivery
+      - RABBITMQ_HOST=rabbitmq
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # panel web
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  db:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: uber
+      POSTGRES_PASSWORD: uber
+      POSTGRES_DB: uber_eats
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
