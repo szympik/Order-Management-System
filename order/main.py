@@ -287,3 +287,4 @@ async def delete_order(order_id: int):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
