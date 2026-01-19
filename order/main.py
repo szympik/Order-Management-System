@@ -9,7 +9,6 @@ from contextlib import contextmanager
 
 app = FastAPI()
 
-# Dodaj CORS - musi być przed definicją endpointów
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,7 +20,6 @@ app.add_middleware(
 RABBIT_URL = "amqp://guest:guest@rabbitmq/"
 EXCHANGE_API_URL = "https://api.exchangerate-api.com/v4/latest/PLN"
 
-# Konfiguracja bazy danych z environment variables
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "db"),
     "database": os.getenv("DB_NAME", "uber_eats"),
@@ -42,7 +40,7 @@ def get_db_connection():
         conn.close()
 
 def init_db():
-    """Inicjalizacja tabeli orders w bazie danych"""
+    
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -60,7 +58,6 @@ def init_db():
         print(f"Database initialization error: {e}")
 
 async def get_exchange_rate():
-    """Pobiera aktualny kurs EUR z zewnętrznego API"""
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(EXCHANGE_API_URL, timeout=5.0)
@@ -68,7 +65,7 @@ async def get_exchange_rate():
             return data["rates"]["EUR"]
     except Exception as e:
         print(f"Exchange API error: {e}")
-        return 0.22  # Fallback rate
+        return 0.22  
 
 @app.on_event("startup")
 async def startup():
@@ -76,7 +73,6 @@ async def startup():
 
 @app.get("/exchange-rate")
 async def get_current_exchange_rate():
-    """Endpoint zwracający aktualny kurs PLN -> EUR"""
     rate = await get_exchange_rate()
     return {
         "from": "PLN",
@@ -95,7 +91,6 @@ async def create_order(order: dict):
         raise HTTPException(status_code=400, detail="Missing required fields: user, product, price")
 
     try:
-        # Pobierz kurs wymiany z zewnętrznego API
         eur_rate = await get_exchange_rate()
         price_eur = round(float(price) * eur_rate, 2)
 
@@ -116,7 +111,6 @@ async def create_order(order: dict):
             "exchange_rate": eur_rate
         }
 
-        # Wyślij do RabbitMQ
         try:
             connection = await aio_pika.connect_robust(RABBIT_URL)
             channel = await connection.channel()
@@ -140,7 +134,6 @@ async def create_order(order: dict):
 @app.get("/orders")
 async def get_orders():
     try:
-        # Pobierz kurs wymiany
         eur_rate = await get_exchange_rate()
 
         with get_db_connection() as conn:
@@ -222,7 +215,6 @@ async def update_order(order_id: int, updated_order: dict):
             "price_eur": price_eur
         }
 
-        # Wyślij update do RabbitMQ
         try:
             connection = await aio_pika.connect_robust(RABBIT_URL)
             channel = await connection.channel()
@@ -265,7 +257,6 @@ async def delete_order(order_id: int):
 
             cursor.execute("DELETE FROM orders WHERE id = %s", (order_id,))
 
-        # Wyślij delete do RabbitMQ
         try:
             connection = await aio_pika.connect_robust(RABBIT_URL)
             channel = await connection.channel()
